@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const dataDir = path.join(__dirname, '../data');
 const Q = require('q');
-const client = require('redis').createClient();
+const redisClient = require('redis').createClient();
 
 
 module.exports = {
@@ -17,21 +17,18 @@ module.exports = {
 	 * @return минимум в множестве на отрезке [left, right]
 	 */
 	getMinimum: (left, right) => {
-		// your code goes here
+		left = +left;
+		right = +right;
 		const deferred = Q.defer();
 
-		client.get(`left=${left}&right=${right}`, function (err, reply) {
+		redisClient.get(`left=${left}&right=${right}`, (err, reply) => {
 			if (err) {
+				deferred.resolve(null);
+			} else if (left > right || left > global.maxValue || right < global.minValue){
 				deferred.resolve(null);
 			} else if (reply) {
 				deferred.resolve(reply);
 			} else {
-				left = +left;
-				right = +right;
-
-				if (left > right || left > global.maxValue || right < global.minValue) {
-					return null;
-				}
 
 				const len = global.maxValue - global.minValue + 1;
 				const step = Math.floor((len + global.countOfParts - 1) / global.countOfParts);
@@ -50,10 +47,13 @@ module.exports = {
 					let min = right + 1;
 
 					for (let i = firstFile; i <= lastFile; i++) {
+						if (!fs.existsSync(path.join(dataDir, `part${i}.txt`)))
+							continue;
+
 						numbers = fs
 							.readFileSync(path.join(dataDir, `part${i}.txt`), 'utf8')
 							.split('\n')
-							.map(function (number) { return +number});
+							.map((number) => +number);
 
 						for (let number of numbers) {
 							if (number == left) {
@@ -72,7 +72,7 @@ module.exports = {
 						}
 					}
 
-					client.set(`left=${left}&right=${right}`, result);
+					redisClient.set(`left=${left}&right=${right}`, result);
 
 					deferred.resolve(result);
 				} catch(err) {
@@ -89,7 +89,6 @@ module.exports = {
 	 * @param number
 	 */
 	addNumber: (number) => {
-		// your code goes here
 		if (number < global.minValue || number > global.maxValue) {
 			return;
 		}
@@ -102,11 +101,19 @@ module.exports = {
 		try {
 			let filePath = path.join(dataDir, `part${fileNumber}.txt`);
 
-			if (fs.existsSync(filePath)) {
-				fs.appendFileSync(filePath, '\n' + number);
-			} else {
-				fs.appendFileSync(filePath, number);
-			}
+			fs.exists(filePath, (exists) => {
+				if (exists) {
+					fs.appendFile(filePath, '\n' + number, (err) => {
+						if (err) throw err;
+						redisClient.flushdb();
+					});
+				} else {
+					fs.appendFile(filePath, number, (err) => {
+						if (err) throw err;
+						redisClient.flushdb();
+					});
+				}
+			});
 		} catch (err) {
 			//console.error(err);
 		}

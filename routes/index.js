@@ -13,7 +13,7 @@ router.get('/', (req, res, next) => {
 	const left = req.query.left;
 	const right = req.query.right;
 
-	solver.getMinimum(left, right).then(function (minimum) {
+	solver.getMinimum(left, right).then((minimum) => {
 		const response = {
 			result: minimum
 		};
