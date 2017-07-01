@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const generator = require('../src/generator');
 const solver = require('../src/solver');
+const redisClient = require('redis').createClient();
 
 /**
  * Контроллер принимает два query параметра GET запроса
@@ -35,6 +36,7 @@ router.post('/', (req, res, next) => {
  */
 router.delete('/', (req, res, next) => {
 	generator.clear().then(() => {
+		redisClient.flushdb();
 		return generator.generate(
 			global.initialSetSize,
 			global.minValue,
