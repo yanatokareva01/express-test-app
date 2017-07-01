@@ -5,6 +5,9 @@
 const fs = require('fs');
 const path = require('path');
 const dataDir = path.join(__dirname, '../data');
+const Q = require('q');
+const client = require('redis').createClient();
+
 
 module.exports = {
 	/**
@@ -15,51 +18,70 @@ module.exports = {
 	 */
 	getMinimum: (left, right) => {
 		// your code goes here
-		left = +left;
-		right = +right;
+		const deferred = Q.defer();
 
-		if (left > right || left > global.maxValue || right < global.minValue) {
-			return null;
-		}
+		client.get(`left=${left}&right=${right}`, function (err, reply) {
+			if (err) {
+				deferred.resolve(null);
+			} else if (reply) {
+				deferred.resolve(reply);
+			} else {
+				left = +left;
+				right = +right;
 
-		const len = global.maxValue - global.minValue + 1;
-		const step = Math.floor((len + global.countOfParts - 1) / global.countOfParts);
-
-		const firstFile = left >= global.minValue ?
-			Math.floor((left - global.minValue) / step) + 1
-			: 1;
-		const lastFile = right <= global.maxValue ?
-			Math.floor((right - global.minValue) / step) + 1
-			: Math.floor((global.maxValue - global.minValue)/step) + 1;
-
-		try {
-			let numbers;
-			let min = right + 1;
-			for (let i = firstFile; i <= lastFile; i++) {
-				numbers = fs
-					.readFileSync(path.join(dataDir, `part${i}.txt`), 'utf8')
-					.split('\n')
-					.map(function (number) { return +number});
-
-				for (let number of numbers) {
-					if (number == left) {
-						return number;
-					}
-
-					if (number > left && number <= right && number < min) {
-						min = number;
-					}
+				if (left > right || left > global.maxValue || right < global.minValue) {
+					return null;
 				}
 
-				if (min < right + 1) {
-					return min;
+				const len = global.maxValue - global.minValue + 1;
+				const step = Math.floor((len + global.countOfParts - 1) / global.countOfParts);
+
+				const firstFile = left >= global.minValue ?
+					Math.floor((left - global.minValue) / step) + 1
+					: 1;
+				const lastFile = right <= global.maxValue ?
+					Math.floor((right - global.minValue) / step) + 1
+					: Math.floor((global.maxValue - global.minValue)/step) + 1;
+
+				let result = null;
+
+				try {
+					let numbers;
+					let min = right + 1;
+
+					for (let i = firstFile; i <= lastFile; i++) {
+						numbers = fs
+							.readFileSync(path.join(dataDir, `part${i}.txt`), 'utf8')
+							.split('\n')
+							.map(function (number) { return +number});
+
+						for (let number of numbers) {
+							if (number == left) {
+								min = number;
+								break;
+							}
+
+							if (number > left && number <= right && number < min) {
+								min = number;
+							}
+						}
+
+						if (min < right + 1) {
+							result = min;
+							break;
+						}
+					}
+
+					client.set(`left=${left}&right=${right}`, result);
+
+					deferred.resolve(result);
+				} catch(err) {
+					deferred.resolve(null);
 				}
 			}
-		} catch(err) {
-			return null;
-		}
+		});
 
-		return null;
+		return deferred.promise;
 	},
 
 	/**
