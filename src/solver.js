@@ -29,54 +29,11 @@ module.exports = {
 			} else if (reply) {
 				deferred.resolve(reply);
 			} else {
-
-				const len = global.maxValue - global.minValue + 1;
-				const step = Math.floor((len + global.countOfParts - 1) / global.countOfParts);
-
-				const firstFile = left >= global.minValue ?
-					Math.floor((left - global.minValue) / step) + 1
-					: 1;
-				const lastFile = right <= global.maxValue ?
-					Math.floor((right - global.minValue) / step) + 1
-					: Math.floor((global.maxValue - global.minValue)/step) + 1;
-
-				let result = null;
-
-				try {
-					let numbers;
-					let min = right + 1;
-
-					for (let i = firstFile; i <= lastFile; i++) {
-						if (!fs.existsSync(path.join(dataDir, `part${i}.txt`)))
-							continue;
-
-						numbers = fs
-							.readFileSync(path.join(dataDir, `part${i}.txt`), 'utf8')
-							.split('\n')
-							.map((number) => +number);
-
-						for (let number of numbers) {
-							if (number == left) {
-								min = number;
-								break;
-							}
-
-							if (number > left && number <= right && number < min) {
-								min = number;
-							}
-						}
-
-						if (min < right + 1) {
-							result = min;
-							break;
-						}
-					}
-
-					redisClient.set(`left=${left}&right=${right}`, result);
-
+				let result = global.segmentTree.rmq(left, right);
+				if (result == Infinity) {
+					deferred.resolve(null);
+				} else {
 					deferred.resolve(result);
-				} catch(err) {
-					deferred.reject(err);
 				}
 			}
 		});

@@ -7,6 +7,7 @@ const bodyParser = require('body-parser');
 const index = require('./routes/index');
 
 const app = express();
+const utils = require('./src/utils');
 
 /**
  * Основные параметры набора чисел
@@ -30,6 +31,12 @@ generator.clear().then(() => {
 }).then(() => {
 	const client = require('redis').createClient();
 	client.flushdb();
+
+	utils.readArrayFromFiles().then((result) => {
+		let merged = [].concat.apply([], result);
+
+		global.segmentTree = new utils.SegmentTree(merged);
+	});
 });
 
 app.use(logger('dev'));
