@@ -60,7 +60,16 @@ module.exports = {
 
 		const numberAdded = (err) => {
 			if (err) throw err;
-			redisClient.flushdb();
+
+			redisClient.keys("*", (err, keys) => {
+				for (let key of keys) {
+					let left = +key.match(/left=(\d+)&/)[1];
+					let right = +key.match(/right=(\d+)/)[1];
+					if (number >= left && number <= right) {
+						redisClient.del(key);
+					}
+				}
+			});
 
 			utils.readArrayFromFiles().then((result) => {
 				let merged = [].concat.apply([], result);
