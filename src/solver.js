@@ -23,9 +23,9 @@ module.exports = {
 
 		redisClient.get(`left=${left}&right=${right}`, (err, reply) => {
 			if (err) {
-				deferred.resolve(null);
+				deferred.reject(err);
 			} else if (left > right || left > global.maxValue || right < global.minValue){
-				deferred.resolve(null);
+				deferred.reject();
 			} else if (reply) {
 				deferred.resolve(reply);
 			} else {
@@ -76,7 +76,7 @@ module.exports = {
 
 					deferred.resolve(result);
 				} catch(err) {
-					deferred.resolve(null);
+					deferred.reject(err);
 				}
 			}
 		});

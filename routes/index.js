@@ -14,12 +14,17 @@ router.get('/', (req, res, next) => {
 	const left = req.query.left;
 	const right = req.query.right;
 
-	solver.getMinimum(left, right).then((minimum) => {
-		const response = {
-			result: minimum
-		};
-		res.json(response);
-	});
+	solver.getMinimum(left, right)
+		.then((minimum) => {
+			const response = {
+				result: minimum
+			};
+			res.json(response);
+		})
+		.catch((err) => {
+			res.status(500);
+			res.end();
+		});
 });
 
 /**
