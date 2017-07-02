@@ -7,7 +7,7 @@ const path = require('path');
 const dataDir = path.join(__dirname, '../data');
 const Q = require('q');
 const redisClient = require('redis').createClient();
-
+const utils = require('./utils');
 
 module.exports = {
 	/**
@@ -31,8 +31,10 @@ module.exports = {
 			} else {
 				let result = global.segmentTree.rmq(left, right);
 				if (result == Infinity) {
+					redisClient.set(`left=${left}&right=${right}`, null);
 					deferred.resolve(null);
 				} else {
+					redisClient.set(`left=${left}&right=${right}`, result);
 					deferred.resolve(result);
 				}
 			}
@@ -46,6 +48,7 @@ module.exports = {
 	 * @param number
 	 */
 	addNumber: (number) => {
+
 		if (number < global.minValue || number > global.maxValue) {
 			return;
 		}
@@ -55,20 +58,25 @@ module.exports = {
 
 		const fileNumber = Math.floor((number - global.minValue) / step) + 1;
 
+		const numberAdded = (err) => {
+			if (err) throw err;
+			redisClient.flushdb();
+
+			utils.readArrayFromFiles().then((result) => {
+				let merged = [].concat.apply([], result);
+
+				global.segmentTree = new utils.SegmentTree(merged);
+			});
+		};
+
 		try {
 			let filePath = path.join(dataDir, `part${fileNumber}.txt`);
 
 			fs.exists(filePath, (exists) => {
 				if (exists) {
-					fs.appendFile(filePath, '\n' + number, (err) => {
-						if (err) throw err;
-						redisClient.flushdb();
-					});
+					fs.appendFile(filePath, '\n' + number, numberAdded);
 				} else {
-					fs.appendFile(filePath, number, (err) => {
-						if (err) throw err;
-						redisClient.flushdb();
-					});
+					fs.appendFile(filePath, number, numberAdded);
 				}
 			});
 		} catch (err) {
