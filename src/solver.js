@@ -71,11 +71,14 @@ module.exports = {
 				}
 			});
 
-			utils.readArrayFromFiles().then((result) => {
-				let merged = [].concat.apply([], result);
+			//utils.readArrayFromFiles().then((result) => {
+			//	let merged = [].concat.apply([], result);
 
-				global.segmentTree = new utils.SegmentTree(merged);
-			});
+			//	global.segmentTree = new utils.SegmentTree(merged);
+			//});
+			let array = global.segmentTree.array;
+			array.push(number);
+			global.segmentTree = new utils.SegmentTree(array);
 		};
 
 		try {

@@ -7,6 +7,11 @@ module.exports = {
 	SegmentTree: class SegmentTree {
 		constructor(array) {
 			this.array = array;
+			this.array.sort((a, b) => {
+				if (a < b) return -1;
+				if (a > b) return 1;
+				return 0;
+			});
 			this.tree = this.makeTree(array.length);
 			this.build(this.array, this.tree, 0, array.length - 1, 0);
 		}
