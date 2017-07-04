@@ -92,6 +92,7 @@ class SegmentTree {
 }
 
 let segmentTree = new SegmentTree();
+let addedNumbers = [];
 
 module.exports = {
 
@@ -108,11 +109,34 @@ module.exports = {
 	},
 
 	getMinimum: (left, right) => {
-		return segmentTree.rmq(left, right);
+		let result;
+		for (let i = 0; addedNumbers[i] <= right; i++) {
+			if (addedNumbers[i] >= left) {
+				result =  addedNumbers[i];
+				break;
+			}
+		}
+
+		return result !== undefined
+			? Math.min(result, segmentTree.rmq(left, right))
+			: segmentTree.rmq(left, right);
 	},
 
 	addNumber: (number) => {
-		segmentTree.array.push(number);
-		segmentTree.makeTree(segmentTree.array);
-	}
+		if (addedNumbers.length < 1000) {
+			let tmp;
+			for (let i = 0; i < addedNumbers.length; i++) {
+				if (addedNumbers[i] > number) {
+					tmp = addedNumbers[i];
+					addedNumbers[i] = number;
+					number = tmp;
+				}
+			}
+			addedNumbers.push(number);
+		} else {
+			segmentTree.array = segmentTree.array.concat(addedNumbers);
+			segmentTree.makeTree(segmentTree.array);
+			addedNumbers = [];
+		}
+	},
 };
