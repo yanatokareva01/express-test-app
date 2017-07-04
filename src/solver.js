@@ -29,8 +29,8 @@ module.exports = {
 			} else if (reply) {
 				deferred.resolve(reply);
 			} else {
-				let result = global.segmentTree.rmq(left, right);
-				if (result == Infinity) {
+				let result = utils.getMinimum(left, right);
+				if (result === Infinity) {
 					redisClient.set(`left=${left}&right=${right}`, null);
 					deferred.resolve(null);
 				} else {
@@ -71,14 +71,7 @@ module.exports = {
 				}
 			});
 
-			//utils.readArrayFromFiles().then((result) => {
-			//	let merged = [].concat.apply([], result);
-
-			//	global.segmentTree = new utils.SegmentTree(merged);
-			//});
-			let array = global.segmentTree.array;
-			array.push(number);
-			global.segmentTree = new utils.SegmentTree(array);
+			utils.addNumber(number);
 		};
 
 		try {

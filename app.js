@@ -23,7 +23,7 @@ global.countOfParts = 1e2;
  */
 const generator = require('./src/generator');
 generator.clear().then(() => {
-  generator.generate(
+  return generator.generate(
       global.initialSetSize,
       global.minValue,
       global.maxValue,
@@ -32,11 +32,7 @@ generator.clear().then(() => {
 	const client = require('redis').createClient();
 	client.flushdb();
 
-	utils.readArrayFromFiles().then((result) => {
-		let merged = [].concat.apply([], result);
-
-		global.segmentTree = new utils.SegmentTree(merged);
-	});
+	utils.init();
 });
 
 app.use(logger('dev'));
