@@ -3,6 +3,7 @@ const router = express.Router();
 const generator = require('../src/generator');
 const solver = require('../src/solver');
 const redisClient = require('redis').createClient();
+const utils = require('../src/utils');
 
 /**
  * Контроллер принимает два query параметра GET запроса
@@ -11,8 +12,8 @@ const redisClient = require('redis').createClient();
  * [left, right] - границы включаются
  */
 router.get('/', (req, res, next) => {
-	const left = req.query.left;
-	const right = req.query.right;
+	const left = +req.query.left;
+	const right = +req.query.right;
 
 	solver.getMinimum(left, right)
 		.then((minimum) => {
@@ -22,8 +23,7 @@ router.get('/', (req, res, next) => {
 			res.json(response);
 		})
 		.catch((err) => {
-			res.status(500);
-			res.end();
+			res.status(500).end();
 		});
 });
 
@@ -31,7 +31,7 @@ router.get('/', (req, res, next) => {
  * Контроллер принимает новое число в теле POST запроса для добавления в набор
  */
 router.post('/', (req, res, next) => {
-	const number = req.body.number;
+	const number = +req.body.number;
 	solver.addNumber(number);
 	res.end();
 });
@@ -42,12 +42,15 @@ router.post('/', (req, res, next) => {
 router.delete('/', (req, res, next) => {
 	generator.clear().then(() => {
 		redisClient.flushdb();
+		utils.clearAll();
+
 		return generator.generate(
 			global.initialSetSize,
 			global.minValue,
 			global.maxValue,
 			global.countOfParts);
 	}).then(() => {
+		utils.init();
 		res.end();
 	});
 });

@@ -33,7 +33,7 @@ class SegmentTree {
 			treeSize = array.length * 2 - 1;
 		} else {
 			treeSize = Math.pow(2, Math.ceil(exponent)) * 2 - 1;
-			let infinityCount = Math.ceil(treeSize /2) - array.length;
+			let infinityCount = Math.ceil(treeSize / 2) - array.length;
 			for (let i = 0; i < infinityCount; i++) {
 				array.push(Infinity);
 			}
@@ -139,4 +139,9 @@ module.exports = {
 			addedNumbers = [];
 		}
 	},
+
+	clearAll: () => {
+		segmentTree = new SegmentTree();
+		addedNumbers = [];
+	}
 };

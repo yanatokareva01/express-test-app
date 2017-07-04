@@ -17,8 +17,6 @@ module.exports = {
 	 * @return минимум в множестве на отрезке [left, right]
 	 */
 	getMinimum: (left, right) => {
-		left = +left;
-		right = +right;
 		const deferred = Q.defer();
 
 		redisClient.get(`left=${left}&right=${right}`, (err, reply) => {
@@ -48,7 +46,6 @@ module.exports = {
 	 * @param number
 	 */
 	addNumber: (number) => {
-
 		if (number < global.minValue || number > global.maxValue) {
 			return;
 		}
