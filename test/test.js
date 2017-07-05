@@ -5,12 +5,12 @@ const Q = require('q');
 
 // TODO: сделать изменяемыми
 const intervalsFile = path.join(__dirname, 'intervals.txt');
-const requestsNumber = process.env.requestsNumber || 1000;
+const requestsNumber = process.env.requestsNumber || 100;
 const min = process.env.min || 1;
 const max = process.env.max || 1e9;
 const port = process.env.PORT || 3000;
 const appUrl = 'http://localhost:' + port;
-const logFile = process.env.logFile || 'log.txt';
+const logFile = process.env.logFile || 'log[without-redis].txt';
 const logger = require('./logger')(path.join(__dirname, logFile));
 
 if (module.parent) {

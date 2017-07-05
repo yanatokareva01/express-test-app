@@ -6,7 +6,6 @@ const fs = require('fs');
 const path = require('path');
 const dataDir = path.join(__dirname, '../data');
 const Q = require('q');
-const redisClient = require('redis').createClient();
 const utils = require('./utils');
 
 module.exports = {
@@ -17,28 +16,13 @@ module.exports = {
 	 * @return минимум в множестве на отрезке [left, right]
 	 */
 	getMinimum: (left, right) => {
-		const deferred = Q.defer();
-
-		redisClient.get(`left=${left}&right=${right}`, (err, reply) => {
-			if (err) {
-				deferred.reject(err);
-			} else if (left > right || left > global.maxValue || right < global.minValue){
-				deferred.reject();
-			} else if (reply) {
-				deferred.resolve(reply);
-			} else {
-				let result = utils.getMinimum(left, right);
-				if (result === Infinity) {
-					redisClient.set(`left=${left}&right=${right}`, null);
-					deferred.resolve(null);
-				} else {
-					redisClient.set(`left=${left}&right=${right}`, result);
-					deferred.resolve(result);
-				}
-			}
-		});
-
-		return deferred.promise;
+		let result;
+		if (left > right || left > global.maxValue || right < global.minValue){
+			result = null;
+		} else {
+			result = utils.getMinimum(left, right);
+		}
+		return result;
 	},
 
 	/**
@@ -57,16 +41,6 @@ module.exports = {
 
 		const numberAdded = (err) => {
 			if (err) throw err;
-
-			redisClient.keys("*", (err, keys) => {
-				for (let key of keys) {
-					let left = +key.match(/left=(\d+)&/)[1];
-					let right = +key.match(/right=(\d+)/)[1];
-					if (number >= left && number <= right) {
-						redisClient.del(key);
-					}
-				}
-			});
 
 			utils.addNumber(number);
 		};
