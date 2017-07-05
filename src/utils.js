@@ -125,13 +125,13 @@ module.exports = {
 	addNumber: (number) => {
 		if (addedNumbers.length < 1000) {
 			let tmp;
-			for (let i = 0; i < addedNumbers.length; i++) {
-				if (addedNumbers[i] > number) {
-					tmp = addedNumbers[i];
+			addedNumbers.forEach((item, i) => {
+				if (item > number) {
+					tmp = item;
 					addedNumbers[i] = number;
 					number = tmp;
 				}
-			}
+			});
 			addedNumbers.push(number);
 		} else {
 			segmentTree.array = segmentTree.array.concat(addedNumbers);

@@ -5,11 +5,13 @@ const Q = require('q');
 
 // TODO: сделать изменяемыми
 const intervalsFile = path.join(__dirname, 'intervals.txt');
-const requestsNumber = 1000;
-const min = 1;
-const max = 1e9;
-const appUrl = 'http://localhost:3000';
-const logger = require('./logger')(path.join(__dirname, 'log.txt'));
+const requestsNumber = process.env.requestsNumber || 1000;
+const min = process.env.min || 1;
+const max = process.env.max || 1e9;
+const port = process.env.PORT || 3000;
+const appUrl = 'http://localhost:' + port;
+const logFile = process.env.logFile || 'log.txt';
+const logger = require('./logger')(path.join(__dirname, logFile));
 
 if (module.parent) {
 	module.exports = test;
@@ -18,23 +20,13 @@ if (module.parent) {
 }
 
 function test() {
-	fs.exists(intervalsFile, (exists) => {
-		logger.info('Начинаем тестирование');
-		if (exists) {
-			sendRequests()
-				.then(processRequestsTime)
-				.catch((err) => {
-					logger.warn(err)
-				})
-		} else {
-			generateTestCoverage()
-				.then(sendRequests)
-				.then(processRequestsTime)
-				.catch((err) => {
-					logger.warn(err);
-				})
-		}
-	});
+	logger.info('Начинаем тестирование');
+	generateTestCoverage()
+		.then(sendRequests)
+		.then(processRequestsTime)
+		.catch((err) => {
+			logger.warn(err);
+		});
 }
 
 function generateTestCoverage() {
@@ -71,12 +63,13 @@ function sendRequests() {
 		} else {
 			result = result.split('\n');
 
+			logger.info('Генерируем GET запросы');
 			let promises = [];
-			for (let i = 0; i < requestsNumber; i++) {
+			for (let i = 0; i < requestsNumber * 0.99; i++) {
 				let interval = result[i].split(' ');
 
 				const deferred = Q.defer();
-				request.get(appUrl, {
+				request(appUrl, {
 					time: true,
 					qs: {
 						left: interval[0],
@@ -86,11 +79,29 @@ function sendRequests() {
 					if (err) {
 						deferred.reject(err);
 					} else {
-						deferred.resolve(res.elapsedTime);
+						deferred.resolve(res.timingPhases.firstByte);
 					}
 				});
 				promises.push(deferred.promise);
 			}
+
+			logger.info('Генерируем POST запросы');
+			for (let i = 0; i < requestsNumber * 0.01; i++) {
+				const deferred = Q.defer();
+				request.post({
+					url: appUrl,
+					time: true,
+					json: {number: Math.floor(Math.random() * (max - min + 1)) + min}
+				}, (err, res) => {
+					if (err) {
+						deferred.reject(err);
+					} else {
+						deferred.resolve(res.timingPhases.firstByte);
+					}
+				});
+				promises.push(deferred.promise);
+			}
+
 			outerDeferred.resolve(promises);
 		}
 	});
@@ -101,5 +112,11 @@ function sendRequests() {
 
 function processRequestsTime(times) {
 	let time = times.reduce((sum, value) => { return sum + value; }, 0);
-	logger.info('Среднее время запроса: ' + time / times.length);
+	logger.info('Время обработки первого GET запроса: ' + times[0]);
+	logger.info('Время обработки последнего GET запроса: ' + times[requestsNumber * 0.99 - 1]);
+
+	logger.info('Время обработки первого POST запроса: ' + times[requestsNumber * 0.99]);
+	logger.info('Время обработки последнего POST запроса: ' + times[times.length - 1]);
+
+	logger.info('Среднее время обработки запроса: ' + time / times.length);
 }
