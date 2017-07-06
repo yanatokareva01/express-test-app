@@ -3,7 +3,6 @@ const fs = require('fs');
 const path = require('path');
 const Q = require('q');
 const dataDir = path.join(__dirname, '../data');
-
 function loadArrays() {
 	let promises = [];
 	for (let i = 1; i <= global.countOfParts; i++) {

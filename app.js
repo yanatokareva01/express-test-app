@@ -29,9 +29,6 @@ generator.clear().then(() => {
       global.maxValue,
       global.countOfParts);
 }).then(() => {
-	const client = require('redis').createClient();
-	client.flushdb();
-
 	utils.init();
 });
 

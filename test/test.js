@@ -10,7 +10,7 @@ const min = process.env.min || 1;
 const max = process.env.max || 1e9;
 const port = process.env.PORT || 3000;
 const appUrl = 'http://localhost:' + port;
-const logFile = process.env.logFile || 'log[with-redis].txt';
+const logFile = process.env.logFile || 'log[without-redis].txt';
 const logger = require('./logger')(path.join(__dirname, logFile));
 
 if (module.parent) {

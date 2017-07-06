@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const generator = require('../src/generator');
 const solver = require('../src/solver');
-const redisClient = require('redis').createClient();
 const utils = require('../src/utils');
 
 /**
@@ -12,19 +11,18 @@ const utils = require('../src/utils');
  * [left, right] - границы включаются
  */
 router.get('/', (req, res, next) => {
-	const left = +req.query.left;
-	const right = +req.query.right;
+	try {
+		const left = +req.query.left;
+		const right = +req.query.right;
 
-	solver.getMinimum(left, right)
-		.then((minimum) => {
-			const response = {
-				result: minimum
-			};
-			res.json(response);
-		})
-		.catch((err) => {
-			res.status(500).end();
-		});
+		const response = {
+			result: solver.getMinimum(left, right)
+		};
+
+		res.json(response);
+	} catch (err) {
+		res.status(500).end();
+	}
 });
 
 /**
@@ -41,7 +39,6 @@ router.post('/', (req, res, next) => {
  */
 router.delete('/', (req, res, next) => {
 	generator.clear().then(() => {
-		redisClient.flushdb();
 		utils.clearAll();
 
 		return generator.generate(
