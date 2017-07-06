@@ -6,7 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const dataDir = path.join(__dirname, '../data');
 const Q = require('q');
-const utils = require('./utils');
+const segmentTreeUtils = require('./segmentTreeUtils');
 
 module.exports = {
 	/**
@@ -20,7 +20,7 @@ module.exports = {
 		if (left > right || left > global.maxValue || right < global.minValue){
 			result = null;
 		} else {
-			result = utils.getMinimum(left, right);
+			result = segmentTreeUtils.getMinimum(left, right);
 		}
 		return result;
 	},
@@ -42,7 +42,7 @@ module.exports = {
 		const numberAdded = (err) => {
 			if (err) throw err;
 
-			utils.addNumber(number);
+			segmentTreeUtils.addNumber(number);
 		};
 
 		try {

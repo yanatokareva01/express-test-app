@@ -3,11 +3,9 @@ const path = require('path');
 const favicon = require('serve-favicon');
 const logger = require('morgan');
 const bodyParser = require('body-parser');
-
 const index = require('./routes/index');
-
+const segmentTreeUtils = require('./src/segmentTreeUtils');
 const app = express();
-const utils = require('./src/utils');
 
 /**
  * Основные параметры набора чисел
@@ -29,7 +27,7 @@ generator.clear().then(() => {
       global.maxValue,
       global.countOfParts);
 }).then(() => {
-	utils.init();
+	segmentTreeUtils.init();
 });
 
 app.use(logger('dev'));

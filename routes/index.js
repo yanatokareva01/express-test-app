@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const generator = require('../src/generator');
 const solver = require('../src/solver');
-const utils = require('../src/utils');
+const segmentTreeUtils = require('../src/segmentTreeUtils');
 
 /**
  * Контроллер принимает два query параметра GET запроса
@@ -39,7 +39,7 @@ router.post('/', (req, res, next) => {
  */
 router.delete('/', (req, res, next) => {
 	generator.clear().then(() => {
-		utils.clearAll();
+		segmentTreeUtils.clearAll();
 
 		return generator.generate(
 			global.initialSetSize,
@@ -47,7 +47,7 @@ router.delete('/', (req, res, next) => {
 			global.maxValue,
 			global.countOfParts);
 	}).then(() => {
-		utils.init();
+		segmentTreeUtils.init();
 		res.end();
 	});
 });
