@@ -29,7 +29,9 @@ function loadArrays() {
 
 function initSegmentTreeBuilder() {
 	let segmentTreeBuilderPath = path.join(__dirname, '../background/segmentTreeBuilder.js');
-	segmentTreeBuilder = childProcess.fork(segmentTreeBuilderPath);
+	segmentTreeBuilder = childProcess.fork(segmentTreeBuilderPath, {
+		execArgv: typeof v8debug === 'object' ? ['--debug'] : []
+	});
 
 	segmentTreeBuilder.on('message', (msg) => {
 		if (typeof msg === 'object' && msg.hasOwnProperty('tree')) {
@@ -78,14 +80,12 @@ module.exports = {
 
 	addNumber: (number) => {
 		if (addedNumbers.length < 1000) {
-			let tmp;
 			addedNumbers.forEach((item, i) => {
 				if (item > number) {
-					tmp = item;
-					addedNumbers[i] = number;
-					number = tmp;
+					[addedNumbers[i], number] = [number, addedNumbers[i]];
 				}
 			});
+
 			addedNumbers.push(number);
 		} else {
 			addedNumbers.push(number);
