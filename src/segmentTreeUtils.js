@@ -35,13 +35,17 @@ function initSegmentTreeBuilder() {
 
 	segmentTreeBuilder.on('message', (msg) => {
 		if (typeof msg === 'object' && msg.hasOwnProperty('tree')) {
+			isBuilding = false;
 			segmentTree.tree = msg.tree;
-			addedNumbers = [];
+			addedNumbers = tmpNumbers;
+			tmpNumbers = [];
 		}
 	});
 }
 
 let addedNumbers = [];
+let tmpNumbers = [];
+let isBuilding = false;
 let segmentTreeBuilder;
 let segmentTree = new SegmentTree();
 
@@ -83,9 +87,14 @@ module.exports = {
 			});
 
 			addedNumbers.push(number);
+		} else if (isBuilding) {
+			tmpNumbers.push(number);
 		} else {
+			isBuilding = true;
+
 			addedNumbers.push(number);
 			segmentTree.array = segmentTree.array.concat(addedNumbers);
+
 			segmentTreeBuilder.send({
 				numbers: segmentTree.array
 			});
