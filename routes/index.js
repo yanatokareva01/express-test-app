@@ -29,9 +29,13 @@ router.get('/', (req, res, next) => {
  * Контроллер принимает новое число в теле POST запроса для добавления в набор
  */
 router.post('/', (req, res, next) => {
-	const number = +req.body.number;
-	solver.addNumber(number);
-	res.end();
+	try {
+		const number = +req.body.number;
+		solver.addNumber(number);
+		res.end();
+	} catch (err) {
+		res.status(500).end();
+	}
 });
 
 /**
@@ -47,8 +51,12 @@ router.delete('/', (req, res, next) => {
 			global.maxValue,
 			global.countOfParts);
 	}).then(() => {
-		segmentTreeUtils.init();
+		return segmentTreeUtils.init();
+	}).then(() => {
 		res.end();
+	}).catch((err) => {
+		//TODO: тут могли быть очень серьезные ошибки
+		console.log(err);
 	});
 });
 

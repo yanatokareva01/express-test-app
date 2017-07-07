@@ -47,8 +47,8 @@ let segmentTree = new SegmentTree();
 
 module.exports = {
 
-	init: function() {
-		loadArrays()
+	init: () => {
+		return loadArrays()
 			.then((result) => {
 				let merged = [].concat.apply([], result);
 				segmentTree.array = merged;
@@ -57,10 +57,6 @@ module.exports = {
 				segmentTreeBuilder.send({
 					numbers: merged
 				});
-			})
-			.catch((err) => {
-				// TODO: catch it
-				console.log(err);
 			});
 	},
 

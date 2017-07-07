@@ -34,29 +34,24 @@ module.exports = {
 			return;
 		}
 
+		const numberAdded = (err) => {
+			if (err) throw err;
+			segmentTreeUtils.addNumber(number);
+
+		};
+
 		const len = global.maxValue - global.minValue + 1;
 		const step = Math.floor((len + global.countOfParts - 1) / global.countOfParts);
 
 		const fileNumber = Math.floor((number - global.minValue) / step) + 1;
+		const filePath = path.join(dataDir, `part${fileNumber}.txt`);
 
-		const numberAdded = (err) => {
-			if (err) throw err;
-
-			segmentTreeUtils.addNumber(number);
-		};
-
-		try {
-			let filePath = path.join(dataDir, `part${fileNumber}.txt`);
-
-			fs.exists(filePath, (exists) => {
-				if (exists) {
-					fs.appendFile(filePath, '\n' + number, numberAdded);
-				} else {
-					fs.appendFile(filePath, number, numberAdded);
-				}
-			});
-		} catch (err) {
-			//console.error(err);
-		}
+		fs.exists(filePath, (exists) => {
+			if (exists) {
+				fs.appendFile(filePath, '\n' + number, numberAdded);
+			} else {
+				fs.appendFile(filePath, number, numberAdded);
+			}
+		});
 	}
 };

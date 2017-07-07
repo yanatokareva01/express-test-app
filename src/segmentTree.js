@@ -25,4 +25,4 @@ module.exports = class SegmentTree {
 			this.rangeMinQuery(tree, ql, qr, i * 2 + 2)
 		));
 	}
-}
+};
