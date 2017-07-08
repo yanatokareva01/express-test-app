@@ -52,8 +52,6 @@ let segmentTree = new SegmentTree();
 process.on('message', (msg) => {
 	if ((typeof msg === "object") && msg.hasOwnProperty('numbers')) {
 		let tree = segmentTree.makeTree(msg.numbers);
-		process.send({
-			tree: tree
-		});
+		process.send({ tree });
 	}
 });

@@ -28,7 +28,7 @@ function loadArrays() {
 }
 
 function initSegmentTreeBuilder() {
-	let segmentTreeBuilderPath = path.join(__dirname, '../background/segmentTreeBuilder.js');
+	const segmentTreeBuilderPath = path.join(__dirname, '../background/segmentTreeBuilder.js');
 	segmentTreeBuilder = childProcess.fork(segmentTreeBuilderPath, {
 		execArgv: typeof v8debug === 'object' ? ['--debug'] : []
 	});
@@ -43,42 +43,76 @@ function initSegmentTreeBuilder() {
 	});
 }
 
+function findMinInAddedNumbers(left, right) {
+	let numbers;
+	isBuilding
+		? numbers = tmpNumbers
+		: numbers = addedNumbers;
+
+	if (numbers.length === 0) {
+		return null;
+	}
+
+	let l = 0,
+		r = numbers.length - 1,
+		mid,
+		result;
+
+	while (l <= r) {
+		mid = (l + r) / 2 | 0;
+
+		if (numbers[mid] < left) {
+			l = mid + 1;
+		} else if (numbers[mid] > left) {
+			r = mid - 1;
+		} else {
+			result =  numbers[mid];
+			break;
+		}
+	}
+
+	if (!result) {
+		result = (numbers[l]) >  left ? numbers[l] : numbers[r];
+	}
+
+	if (result > right || result < left) {
+		return null;
+	}
+
+	return result;
+}
+
+let isBuilding = false;
 let addedNumbers = [];
 let tmpNumbers = [];
-let isBuilding = false;
 let segmentTreeBuilder;
 let segmentTree = new SegmentTree();
 
 module.exports = {
 
-	init: () => {
+	init() {
 		return loadArrays()
 			.then((result) => {
-				let merged = [].concat.apply([], result);
-				segmentTree.array = merged;
+				let numbers = [].concat.apply([], result);
+				segmentTree.array = numbers;
 
 				initSegmentTreeBuilder();
-				segmentTreeBuilder.send({
-					numbers: merged
-				});
+				segmentTreeBuilder.send({ numbers });
 			});
 	},
 
-	getMinimum: (left, right) => {
-		let result;
-		for (let i = 0; addedNumbers[i] <= right; i++) {
-			if (addedNumbers[i] >= left) {
-				result =  addedNumbers[i];
-				break;
-			}
-		}
+	getMinimum(left, right) {
+		let minFromAddedNumbers = findMinInAddedNumbers(left, right);
+		let minFromSegmentTree = segmentTree.rmq(left, right);
 
-		return result !== undefined
-			? Math.min(result, segmentTree.rmq(left, right))
-			: segmentTree.rmq(left, right);
+		if (minFromAddedNumbers) {
+			return Math.min(minFromAddedNumbers, minFromSegmentTree);
+		} else {
+			return minFromSegmentTree;
+		}
 	},
 
-	addNumber: (number) => {
+	addNumber(number) {
 		if (addedNumbers.length < 1000) {
 			addedNumbers.forEach((item, i) => {
 				if (item > number) {
@@ -101,7 +135,7 @@ module.exports = {
 		}
 	},
 
-	clearAll: () => {
+	clearAll() {
 		segmentTree = new SegmentTree();
 		addedNumbers = [];
 	}
