@@ -39,7 +39,7 @@ module.exports = {
 					promises.push(models[i - 1]
 						.find({})
 						.where('number').gte(left).lte(right)
-						.sort('number')
+						.sort({number: 1})
 						.then((results) => {
 							return results[0];
 						}));

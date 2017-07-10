@@ -36,6 +36,7 @@ let server = http.createServer(app);
 /**
  * Соединение с базой данных
  */
+mongoose.set('debug', true);
 mongoose.Promise = Q.Promise;
 let options = {
 	promiseLibrary: Q,
