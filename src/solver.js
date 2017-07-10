@@ -6,7 +6,6 @@ const fs = require('fs');
 const path = require('path');
 const dataDir = path.join(__dirname, '../data');
 const Q = require('q');
-const redisClient = require('redis').createClient();
 const models = require('../models/segment');
 
 module.exports = {
@@ -17,48 +16,38 @@ module.exports = {
 	 * @return минимум в множестве на отрезке [left, right]
 	 */
 	getMinimum: (left, right) => {
-		const deferred = Q.defer();
 
-		redisClient.get(`left=${left}&right=${right}`, (err, reply) => {
-			if (reply) {
-				deferred.resolve(reply);
-			} else {
-				const len = global.maxValue - global.minValue + 1;
-				const step = Math.floor((len + global.countOfParts - 1) / global.countOfParts);
+		const len = global.maxValue - global.minValue + 1;
+		const step = Math.floor((len + global.countOfParts - 1) / global.countOfParts);
 
-				const firstPart = left >= global.minValue
-					? Math.floor((left - global.minValue) / step) + 1
-					: 1;
-				const lastPart = right <= global.maxValue
-					? Math.floor((right - global.minValue) / step) + 1
-					: Math.floor((global.maxValue - global.minValue)/step) + 1;
+		const firstPart = left >= global.minValue
+			? Math.floor((left - global.minValue) / step) + 1
+			: 1;
+		const lastPart = right <= global.maxValue
+			? Math.floor((right - global.minValue) / step) + 1
+			: Math.floor((global.maxValue - global.minValue)/step) + 1;
 
-				const promises = [];
+		const promises = [];
 
-				for (let i = firstPart; i <= lastPart; i++) {
-					promises.push(models[i - 1]
-						.find({})
-						.where('number').gte(left).lte(right)
-						.sort({number: 1})
-						.then((results) => {
-							return results[0];
-						}));
-				}
-
-				deferred.resolve(Q.all(promises).then((minimumsFromParts) => {
-					for (let minFromPart of minimumsFromParts) {
-						if (minFromPart) {
-							redisClient.set(`left=${left}&right=${right}`, minFromPart.number);
-							return minFromPart.number;
-						}
-					}
-
-					return null;
+		for (let i = firstPart; i <= lastPart; i++) {
+			promises.push(models[i - 1]
+				.find({})
+				.where('number').gte(left).lte(right)
+				.sort({number: 1})
+				.then((results) => {
+					return results[0];
 				}));
-			}
-		});
+		}
 
-		return deferred.promise;
+		return Q.all(promises).then((minimumsFromParts) => {
+			for (let minFromPart of minimumsFromParts) {
+				if (minFromPart) {
+					return minFromPart.number;
+				}
+			}
+
+			return null;
+		});
 	},
 
 	/**
@@ -71,9 +60,6 @@ module.exports = {
 
 		const part = Math.floor((number - global.minValue) / step);
 
-		return models[part].create({ number })
-			.then(() => {
-				redisClient.flushdb();
-			});
+		return models[part].create({ number });
 	}
 };

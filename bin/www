@@ -18,7 +18,6 @@ const mongoose = require('mongoose');
 const mongooseConfig = require('../config/mongoose');
 const generator = require('../src/generator');
 const Q = require('q');
-const redisClient = require('redis').createClient();
 
 /**
  * Get port from environment and store in Express.
@@ -56,7 +55,6 @@ mongoose.connect(connectionString, options)
 			global.countOfParts);
 	})
 	.then(() => {
-		redisClient.flushdb();
 
 		server.listen(port);
 		server.on('error', onError);
