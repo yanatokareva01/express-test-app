@@ -7,14 +7,6 @@ const mongoose = require('mongoose');
 const index = require('./routes/index');
 const app = express();
 
-/**
- * Основные параметры набора чисел
- */
-global.initialSetSize = 1e6;
-global.minValue = 1;
-global.maxValue = 1e9;
-global.countOfParts = 1e2;
-
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));

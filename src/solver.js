@@ -7,7 +7,7 @@ const path = require('path');
 const dataDir = path.join(__dirname, '../data');
 const Q = require('q');
 const redisClient = require('redis').createClient();
-const Segment = require('../models/segment');
+const models = require('../models/segment');
 
 module.exports = {
 	/**
@@ -33,37 +33,28 @@ module.exports = {
 					? Math.floor((right - global.minValue) / step) + 1
 					: Math.floor((global.maxValue - global.minValue)/step) + 1;
 
-				Segment.find({})
-					.where('part').gte(firstPart).lte(lastPart)
-					.sort('part')
-					.then((documents) => {
-						let min = right + 1;
-						let result = null;
+				const promises = [];
 
-						for (let document of documents) {
-							let numbers = document.numbers;
+				for (let i = firstPart; i <= lastPart; i++) {
+					promises.push(models[i - 1]
+						.find({})
+						.where('number').gte(left).lte(right)
+						.sort('number')
+						.then((results) => {
+							return results[0];
+						}));
+				}
 
-							for (let number of numbers) {
-								if (number === left) {
-									min = number;
-									break;
-								}
-
-								if (number > left && number <= right && number < min) {
-									min = number;
-								}
-							}
-
-							if (min < right + 1) {
-								result = min;
-								break;
-							}
+				deferred.resolve(Q.all(promises).then((minimumsFromParts) => {
+					for (let minFromPart of minimumsFromParts) {
+						if (minFromPart) {
+							redisClient.set(`left=${left}&right=${right}`, minFromPart.number);
+							return minFromPart.number;
 						}
+					}
 
-						redisClient.set(`left=${left}&right=${right}`, result);
-
-						deferred.resolve(result);
-					});
+					return null;
+				}));
 			}
 		});
 
@@ -78,15 +69,11 @@ module.exports = {
 		const len = global.maxValue - global.minValue + 1;
 		const step = Math.floor((len + global.countOfParts - 1) / global.countOfParts);
 
-		const part = Math.floor((number - global.minValue) / step) + 1;
+		const part = Math.floor((number - global.minValue) / step);
 
-		return Segment.findOne({ part })
-			.then((part) => {
+		return models[part].create({ number })
+			.then(() => {
 				redisClient.flushdb();
-
-				part.numbers.push(number);
-
-				return part.save();
 			});
 	}
 };

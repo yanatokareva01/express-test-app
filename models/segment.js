@@ -1,18 +1,17 @@
 const mongoose = require('mongoose');
 
 let segmentSchema = new mongoose.Schema({
-	numbers: {
-		type: [],
-		required: true
-	},
-	part: {
+	number: {
 		type: Number,
 		required: true,
-		unique: true,
 		index: true
-	}
+	},
 });
 
-let Segment = mongoose.model('Segment', segmentSchema, 'data');
+let models = [];
 
-module.exports = Segment;
+for (let i = 0; i < global.countOfParts; i++) {
+	models.push(mongoose.model(`part${i + 1}`, segmentSchema, `part${i+1}`))
+}
+
+module.exports = models;
