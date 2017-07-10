@@ -7,7 +7,7 @@ const path = require('path');
 const dataDir = path.join(__dirname, '../data');
 const Q = require('q');
 const redisClient = require('redis').createClient();
-
+const Segment = require('../models/segment');
 
 module.exports = {
 	/**
@@ -17,67 +17,53 @@ module.exports = {
 	 * @return минимум в множестве на отрезке [left, right]
 	 */
 	getMinimum: (left, right) => {
-		left = +left;
-		right = +right;
 		const deferred = Q.defer();
 
 		redisClient.get(`left=${left}&right=${right}`, (err, reply) => {
-			if (err) {
-				deferred.reject(err);
-			} else if (left > right || left > global.maxValue || right < global.minValue){
-				deferred.reject();
-			} else if (reply) {
+			if (reply) {
 				deferred.resolve(reply);
 			} else {
-
 				const len = global.maxValue - global.minValue + 1;
 				const step = Math.floor((len + global.countOfParts - 1) / global.countOfParts);
 
-				const firstFile = left >= global.minValue ?
-					Math.floor((left - global.minValue) / step) + 1
+				const firstPart = left >= global.minValue
+					? Math.floor((left - global.minValue) / step) + 1
 					: 1;
-				const lastFile = right <= global.maxValue ?
-					Math.floor((right - global.minValue) / step) + 1
+				const lastPart = right <= global.maxValue
+					? Math.floor((right - global.minValue) / step) + 1
 					: Math.floor((global.maxValue - global.minValue)/step) + 1;
 
-				let result = null;
+				Segment.find({})
+					.where('part').gte(firstPart).lte(lastPart)
+					.sort('part')
+					.then((documents) => {
+						let min = right + 1;
+						let result = null;
 
-				try {
-					let numbers;
-					let min = right + 1;
+						for (let document of documents) {
+							let numbers = document.numbers;
 
-					for (let i = firstFile; i <= lastFile; i++) {
-						if (!fs.existsSync(path.join(dataDir, `part${i}.txt`)))
-							continue;
+							for (let number of numbers) {
+								if (number === left) {
+									min = number;
+									break;
+								}
 
-						numbers = fs
-							.readFileSync(path.join(dataDir, `part${i}.txt`), 'utf8')
-							.split('\n')
-							.map((number) => +number);
+								if (number > left && number <= right && number < min) {
+									min = number;
+								}
+							}
 
-						for (let number of numbers) {
-							if (number == left) {
-								min = number;
+							if (min < right + 1) {
+								result = min;
 								break;
 							}
-
-							if (number > left && number <= right && number < min) {
-								min = number;
-							}
 						}
 
-						if (min < right + 1) {
-							result = min;
-							break;
-						}
-					}
+						redisClient.set(`left=${left}&right=${right}`, result);
 
-					redisClient.set(`left=${left}&right=${right}`, result);
-
-					deferred.resolve(result);
-				} catch(err) {
-					deferred.reject(err);
-				}
+						deferred.resolve(result);
+					});
 			}
 		});
 
@@ -89,33 +75,18 @@ module.exports = {
 	 * @param number
 	 */
 	addNumber: (number) => {
-		if (number < global.minValue || number > global.maxValue) {
-			return;
-		}
-
 		const len = global.maxValue - global.minValue + 1;
 		const step = Math.floor((len + global.countOfParts - 1) / global.countOfParts);
 
-		const fileNumber = Math.floor((number - global.minValue) / step) + 1;
+		const part = Math.floor((number - global.minValue) / step) + 1;
 
-		try {
-			let filePath = path.join(dataDir, `part${fileNumber}.txt`);
+		return Segment.findOne({ part })
+			.then((part) => {
+				redisClient.flushdb();
 
-			fs.exists(filePath, (exists) => {
-				if (exists) {
-					fs.appendFile(filePath, '\n' + number, (err) => {
-						if (err) throw err;
-						redisClient.flushdb();
-					});
-				} else {
-					fs.appendFile(filePath, number, (err) => {
-						if (err) throw err;
-						redisClient.flushdb();
-					});
-				}
+				part.numbers.push(number);
+
+				return part.save();
 			});
-		} catch (err) {
-			//console.error(err);
-		}
 	}
 };

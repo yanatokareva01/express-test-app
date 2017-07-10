@@ -11,19 +11,20 @@ const redisClient = require('redis').createClient();
  * [left, right] - границы включаются
  */
 router.get('/', (req, res, next) => {
-	const left = req.query.left;
-	const right = req.query.right;
+	const left = +req.query.left;
+	const right = +req.query.right;
+
+	if (left > right || left > global.maxValue || right < global.minValue) {
+		res.status(400).end();
+		return;
+	}
 
 	solver.getMinimum(left, right)
-		.then((minimum) => {
-			const response = {
-				result: minimum
-			};
-			res.json(response);
+		.then((result) => {
+			res.json({ result });
 		})
 		.catch((err) => {
-			res.status(500);
-			res.end();
+			res.status(500).end();
 		});
 });
 
@@ -32,8 +33,18 @@ router.get('/', (req, res, next) => {
  */
 router.post('/', (req, res, next) => {
 	const number = req.body.number;
-	solver.addNumber(number);
-	res.end();
+	if (number < global.minValue || number > global.maxValue) {
+		res.status(400).end();
+		return;
+	}
+
+	solver.addNumber(number)
+		.then(() => {
+			res.end();
+		})
+		.catch(() => {
+			res.send(500).end();
+		});
 });
 
 /**

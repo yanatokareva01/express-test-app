@@ -3,9 +3,8 @@ const path = require('path');
 const favicon = require('serve-favicon');
 const logger = require('morgan');
 const bodyParser = require('body-parser');
-
+const mongoose = require('mongoose');
 const index = require('./routes/index');
-
 const app = express();
 
 /**
@@ -15,22 +14,6 @@ global.initialSetSize = 1e6;
 global.minValue = 1;
 global.maxValue = 1e9;
 global.countOfParts = 1e2;
-
-/**
- * Инициализация исходного набора чисел (будет выполняться при каждом запуске сервера)
- * Если не нужно, можно убрать
- */
-const generator = require('./src/generator');
-generator.clear().then(() => {
-  generator.generate(
-      global.initialSetSize,
-      global.minValue,
-      global.maxValue,
-      global.countOfParts);
-}).then(() => {
-	const client = require('redis').createClient();
-	client.flushdb();
-});
 
 app.use(logger('dev'));
 app.use(bodyParser.json());

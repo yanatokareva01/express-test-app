@@ -3,10 +3,10 @@
  */
 "use strict";
 
-const fs = require('fs');
 const path = require('path');
 const Q = require('q');
-const dataDir = path.join(__dirname, '../data');
+const Segment = require('../models/segment');
+const mongoose = require('mongoose');
 
 module.exports = {
     generate: (initialSetSize, minValue, maxValue, countOfParts) => {
@@ -46,44 +46,15 @@ module.exports = {
             // console.log(numbers[i] + ' goes to part' + (r + 1));
         }
 
-        const promises = partsData.map((partData, index) => {
-            const deferred = Q.defer();
-            const partPath = path.join(dataDir, `part${index + 1}.txt`);
-            fs.writeFile(partPath, partData.join('\n'), (err, result) => {
-                if (err) {
-                    deferred.reject(err);
-                } else {
-                    deferred.resolve(result);
-                }
-            });
-            return deferred.promise;
+        const promises = partsData.map((numbers, index) => {
+	        const part = index + 1;
+
+            return Segment.create({ numbers, part });
         });
+
         return Q.all(promises);
     },
     clear: () => {
-        const outerDeferred = Q.defer();
-        fs.readdir(dataDir, (err, files) => {
-            if (err) {
-                outerDeferred.reject(err);
-            } else {
-                const promises = [];
-                for (const file of files) {
-                    const deferred = Q.defer();
-                    fs.unlink(path.join(dataDir, file), err => {
-                        if (err) {
-                            deferred.reject(err);
-                        } else {
-                            // console.log('unlink', path.join(dataDir, file));
-                            deferred.resolve();
-                        }
-                    });
-                    promises.push(deferred.promise);
-                }
-                outerDeferred.resolve(promises);
-            }
-        });
-        return outerDeferred.promise.then((promises) => {
-            return Q.all(promises);
-        });
+       return Segment.remove({});
     }
 };
