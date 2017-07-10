@@ -138,5 +138,6 @@ module.exports = {
 	clearAll() {
 		segmentTree = new SegmentTree();
 		addedNumbers = [];
+		tmpNumbers = [];
 	}
 };
