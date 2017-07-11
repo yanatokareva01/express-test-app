@@ -8,6 +8,9 @@ const dataDir = path.join(__dirname, '../data');
 const Q = require('q');
 const models = require('../models/segment');
 
+const len = global.maxValue - global.minValue + 1;
+const step = Math.floor((len + global.countOfParts - 1) / global.countOfParts);
+
 module.exports = {
 	/**
 	 * Метод, возвращающий минимум среди чисел набора, принадлежащих отрезку [left, right]
@@ -16,10 +19,6 @@ module.exports = {
 	 * @return минимум в множестве на отрезке [left, right]
 	 */
 	getMinimum: (left, right) => {
-
-		const len = global.maxValue - global.minValue + 1;
-		const step = Math.floor((len + global.countOfParts - 1) / global.countOfParts);
-
 		const firstPart = left >= global.minValue
 			? Math.floor((left - global.minValue) / step) + 1
 			: 1;
@@ -27,27 +26,25 @@ module.exports = {
 			? Math.floor((right - global.minValue) / step) + 1
 			: Math.floor((global.maxValue - global.minValue)/step) + 1;
 
-		const promises = [];
+		const functions = [];
 
 		for (let i = firstPart; i <= lastPart; i++) {
-			promises.push(models[i - 1]
-				.find({})
-				.where('number').gte(left).lte(right)
-				.sort({number: 1})
-				.then((results) => {
-					return results[0];
-				}));
+			functions.push(() => {
+				return models[i - 1]
+					.find({})
+					.where('number').gte(left).lte(right)
+					.sort({number: 1})
+					.then((results) => {
+						if (results[0])
+							throw results[0];
+					});
+			});
 		}
 
-		return Q.all(promises).then((minimumsFromParts) => {
-			for (let minFromPart of minimumsFromParts) {
-				if (minFromPart) {
-					return minFromPart.number;
-				}
-			}
-
-			return null;
-		});
+		// читать коллекции друг за другом
+		return functions.reduce(function (soFar, f) {
+			return soFar.then(f);
+		}, Q());
 	},
 
 	/**
@@ -55,9 +52,6 @@ module.exports = {
 	 * @param number
 	 */
 	addNumber: (number) => {
-		const len = global.maxValue - global.minValue + 1;
-		const step = Math.floor((len + global.countOfParts - 1) / global.countOfParts);
-
 		const part = Math.floor((number - global.minValue) / step);
 
 		return models[part].create({ number });

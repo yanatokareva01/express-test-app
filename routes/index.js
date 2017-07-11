@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const generator = require('../src/generator');
 const solver = require('../src/solver');
+const mongoose = require('mongoose');
 
 /**
  * Контроллер принимает два query параметра GET запроса
@@ -20,10 +21,15 @@ router.get('/', (req, res, next) => {
 
 	solver.getMinimum(left, right)
 		.then((result) => {
+			result = result || null;
 			res.json({ result });
 		})
 		.catch((err) => {
-			res.status(500).end();
+			if (err instanceof mongoose.Model) {
+				res.send({number: err.number})
+			} else {
+				res.status(500).end();
+			}
 		});
 });
 

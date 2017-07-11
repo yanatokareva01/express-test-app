@@ -48,6 +48,14 @@ module.exports = {
 		return Q.all(promises);
 	},
 	clear: () => {
-		return mongoose.connection.dropDatabase();
+		return mongoose.connection.dropDatabase()
+			.then(() => {
+				const promises = [];
+				for (let model of models) {
+					promises.push(model.ensureIndexes());
+				}
+
+				return Q.all(promises);
+			});
 	}
 };
