@@ -73,6 +73,30 @@ describe('Тестирование модуля solver.js', function() {
 
 		});
 
+		describe('Добавление числа 1', function() {
+			it('getMinimum(1, 10) вернет 1', function () {
+				assert.equal(solver.getMinimum(1, 10), 1);
+			});
+
+			it('При добавлении числа 1 файл partNaN.txt содержит 1', function (done) {
+				solver.addNumber(1)
+					.then(() => readFile(fileName, 'utf8'))
+					.then((result) => {
+						result = result.split('\n');
+						assert.isTrue(result.includes('1'));
+						done();
+					});
+			});
+
+			it('При добавлении числа 1 getMinimum(1, 10) вернет 1', function (done) {
+				solver.addNumber(1)
+					.then(() => {
+						assert.equal(solver.getMinimum(1, 10), 1);
+						done();
+					});
+			});
+
+		});
 
 		describe('Добавление числа больше maxValue (maxValue = 30)', function() {
 			global.maxValue = 30;
