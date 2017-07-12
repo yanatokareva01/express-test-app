@@ -30,13 +30,19 @@ module.exports = {
 	 * @param number
 	 */
 	addNumber: (number) => {
+		const deferred = Q.defer();
+
 		if (number < global.minValue || number > global.maxValue) {
-			return;
+			deferred.reject();
 		}
 
 		const numberAdded = (err) => {
-			if (err) throw err;
-			segmentTreeUtils.addNumber(number);
+			if (err) {
+				deferred.reject(err);
+			} else {
+				segmentTreeUtils.addNumber(number);
+				deferred.resolve();
+			}
 
 		};
 
@@ -53,5 +59,7 @@ module.exports = {
 				fs.appendFile(filePath, number, numberAdded);
 			}
 		});
+
+		return deferred.promise;
 	}
 };

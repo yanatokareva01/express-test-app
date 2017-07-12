@@ -141,3 +141,7 @@ module.exports = {
 		tmpNumbers = [];
 	}
 };
+
+if (process.env.NODE_ENV === 'test') {
+	module.exports.segmentTree = segmentTree;
+}
